@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HomeMusic 0.2.3</title>
+
+    <link rel="stylesheet" href="/web/style.css">
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>🎵 HomeMusic 0.2.3</h1>
+
+    <p class="subtitle">
+        Der schnellste Weg von der Suche zur Musik.
+    </p>
+
+    <div class="filterbox">
+
+        <label>
+            <input type="radio" name="searchmode" value="all" checked>
+            Alles
+        </label>
+
+        <label>
+            <input type="radio" name="searchmode" value="artist">
+            Interpret
+        </label>
+
+        <label>
+            <input type="radio" name="searchmode" value="album">
+            Album
+        </label>
+
+        <label>
+            <input type="radio" name="searchmode" value="title">
+            Titel
+        </label>
+
+        <label>
+            <input type="radio" name="searchmode" value="year">
+            Jahr
+        </label>
+
+    </div>
+
+    <div class="searchbox">
+
+        <input
+            type="text"
+            id="search"
+            placeholder="Interpret, Album, Titel oder Jahr..."
+            autofocus>
+
+        <button
+            id="clearbutton"
+            onclick="clearSearch()"
+            title="Suche löschen">
+            ❌
+        </button>
+
+    </div>
+
+    <div id="count" class="count">
+        0 Treffer
+    </div>
+
+    <table>
+
+        <thead>
+
+        <tr>
+            <th>Interpret</th>
+            <th>Album</th>
+            <th>Titel</th>
+            <th>Jahr</th>
+            <th>▶</th>
+        </tr>
+
+        </thead>
+
+        <tbody id="results">
+        </tbody>
+
+    </table>
+
+</div>
+
+<script src="/web/script.js"></script>
+
+</body>
+</html>
