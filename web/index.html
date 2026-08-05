@@ -9,15 +9,47 @@
     <link rel="stylesheet" href="/web/style.css">
 </head>
 
+<footer id="version">
+    v0.2.3
+</footer>
+
 <body>
 
 <div class="container">
 
-    <h1>🎵 HomeMusic 0.2.3</h1>
+    <div class="topbar">
 
-    <p class="subtitle">
-        Der schnellste Weg von der Suche zur Musik.
-    </p>
+    <h1>🎵 HomeMusic</h1>
+
+    <div id="mini-player">
+
+        <button id="playPauseButton" onclick="togglePlay()">▶</button>
+
+        <button id="stopButton" onclick="stopPlayer()">■</button>
+
+        <span id="currentTime">00:00</span>
+
+        <input
+            type="range"
+            id="progress"
+            value="0"
+            min="0"
+            max="100"
+oninput="seekPlayer()">
+
+        <span id="duration">00:00</span>
+
+    </div>
+
+</div>
+
+<p class="subtitle">
+    Der schnellste Weg von der Suche zur Musik.
+</p>
+
+<div id="currentSong">
+    🎵 Kein Titel ausgewählt
+</div>
 
     <div class="filterbox">
 
@@ -89,6 +121,8 @@
     </table>
 
 </div>
+
+
 
 <script src="/web/script.js"></script>
 

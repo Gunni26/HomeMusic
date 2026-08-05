@@ -69,7 +69,11 @@ async function searchMusic() {
             <td>${song.year || "-"}</td>
 
             <td>
-                <button onclick="playSong('${encodeURIComponent(song.filepath)}')">
+                <button onclick="playSong(
+'${encodeURIComponent(song.filepath)}',
+'${(song.artist || "").replace(/'/g, "\\'")}',
+'${(song.title || "").replace(/'/g, "\\'")}'
+)">
                     ▶
                 </button>
             </td>
@@ -139,10 +143,32 @@ function handleKeys(event) {
 
 
 
-    function playSong(path) {
+function playSong(path, artist = "", title = "") {
 
-    const audio = new Audio("/play?path=" + path);
-    audio.play();
+    if (!window.player) {
+
+        window.player = new Audio();
+
+        window.player.addEventListener("timeupdate", updatePlayer);
+
+        window.player.addEventListener("loadedmetadata", updatePlayer);
+
+        window.player.addEventListener("ended", function () {
+
+            document.getElementById("playPauseButton").textContent = "▶";
+
+        });
+
+    }
+
+    window.player.src = "/play?path=" + path;
+
+    window.player.play();
+
+    document.getElementById("playPauseButton").textContent = "⏸";
+
+    document.getElementById("currentSong").textContent =
+    "🎵 " + artist + " – " + title;
 
 }
 
@@ -157,5 +183,85 @@ function clearSearch() {
     selectedRow = 0;
 
     document.getElementById("search").focus();
+
+}
+
+function togglePlay() {
+
+    if (!window.player)
+        return;
+
+    if (window.player.paused) {
+
+        window.player.play();
+
+        document.getElementById("playPauseButton").textContent = "⏸";
+
+    } else {
+
+        window.player.pause();
+
+        document.getElementById("playPauseButton").textContent = "▶";
+
+    }
+
+}
+
+function stopPlayer() {
+
+    if (!window.player)
+        return;
+
+    window.player.pause();
+
+    window.player.currentTime = 0;
+
+    document.getElementById("playPauseButton").textContent = "▶";
+
+    document.getElementById("progress").value = 0;
+
+    document.getElementById("currentTime").textContent = "00:00";
+
+}
+
+function updatePlayer() {
+
+    if (!window.player)
+        return;
+
+    document.getElementById("currentTime").textContent =
+        formatTime(window.player.currentTime);
+
+    document.getElementById("duration").textContent =
+        formatTime(window.player.duration);
+
+    document.getElementById("progress").max =
+        window.player.duration || 0;
+
+    document.getElementById("progress").value =
+        window.player.currentTime;
+
+}
+
+function seekPlayer() {
+
+    if (!window.player)
+        return;
+
+    window.player.currentTime =
+        document.getElementById("progress").value;
+
+}
+
+function formatTime(sec) {
+
+    if (isNaN(sec))
+        return "00:00";
+
+    let m = Math.floor(sec / 60);
+
+    let s = Math.floor(sec % 60);
+
+    return m + ":" + String(s).padStart(2, "0");
 
 }
