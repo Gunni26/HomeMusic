@@ -81,8 +81,7 @@ h1 {
 table {
     width: 100%;
     border-collapse: collapse;
-    background: white;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+    table-layout: fixed;
 }
 
 th {
@@ -188,4 +187,39 @@ tbody button:hover {
     font-family: Arial, Helvetica, sans-serif;
 
     user-select: none;
+}
+
+/* ==========================
+   Trefferliste
+   ========================== */
+
+#results-container {
+
+    height: calc(100vh - 360px);
+
+    overflow-y: auto;
+
+    border: 1px solid #d0d0d0;
+
+    background: white;
+
+}
+
+#results-container table {
+
+    margin: 0;
+
+}
+
+.filterbox {
+    display: flex;
+    align-items: center;
+}
+
+.filter-spacer {
+    flex: 1;
+}
+
+#player-placeholder {
+    width: 360px;
 }

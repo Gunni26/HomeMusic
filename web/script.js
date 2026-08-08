@@ -61,22 +61,20 @@ async function searchMusic() {
     currentSongs.forEach((song, index) => {
 
         html += `
-        <tr class="${index === 0 ? "selected" : ""}">
+        <tr
+    class="${index === 0 ? "selected" : ""}"
+    onclick="playSong(
+'${encodeURIComponent(song.filepath)}',
+'${(song.artist || "").replace(/'/g, "\\'")}',
+'${(song.title || "").replace(/'/g, "\\'")}'
+)">
 
             <td>${song.artist || "-"}</td>
             <td>${song.album || "-"}</td>
             <td>${song.title || "-"}</td>
             <td>${song.year || "-"}</td>
 
-            <td>
-                <button onclick="playSong(
-'${encodeURIComponent(song.filepath)}',
-'${(song.artist || "").replace(/'/g, "\\'")}',
-'${(song.title || "").replace(/'/g, "\\'")}'
-)">
-                    ▶
-                </button>
-            </td>
+        
 
         </tr>
         `;
@@ -86,58 +84,6 @@ async function searchMusic() {
     document.getElementById("results").innerHTML = html;
 
     selectedRow = 0;
-
-}
-
-
-function handleKeys(event) {
-
-    if (currentSongs.length === 0)
-        return;
-
-    const rows = document.querySelectorAll("#results tr");
-
-    if (event.key === "ArrowDown") {
-
-        event.preventDefault();
-
-        if (selectedRow < rows.length - 1)
-            selectedRow++;
-
-    }
-
-    else if (event.key === "ArrowUp") {
-
-        event.preventDefault();
-
-        if (selectedRow > 0)
-            selectedRow--;
-
-    }
-
-    else if (event.key === "Enter") {
-
-        event.preventDefault();
-
-        playSong(
-            encodeURIComponent(currentSongs[selectedRow].filepath)
-        );
-
-        return;
-
-    }
-
-    else if (event.key === "Escape") {
-
-        clearSearch();
-        return;
-
-    }
-
-    rows.forEach(row => row.classList.remove("selected"));
-
-    if (rows[selectedRow])
-        rows[selectedRow].classList.add("selected");
 
 }
 
@@ -263,5 +209,82 @@ function formatTime(sec) {
     let s = Math.floor(sec % 60);
 
     return m + ":" + String(s).padStart(2, "0");
+
+}
+
+function handleKeys(event) {
+
+    if (currentSongs.length === 0)
+        return;
+
+    const rows = document.querySelectorAll("#results tr");
+
+    if (event.key === "ArrowDown") {
+
+        event.preventDefault();
+
+        if (selectedRow < rows.length - 1)
+            selectedRow++;
+
+    }
+
+    else if (event.key === "ArrowUp") {
+
+        event.preventDefault();
+
+        if (selectedRow > 0)
+            selectedRow--;
+
+    }
+
+    else if (event.key === "Enter") {
+
+        event.preventDefault();
+
+        playSong(
+            encodeURIComponent(currentSongs[selectedRow].filepath),
+            currentSongs[selectedRow].artist,
+            currentSongs[selectedRow].title
+        );
+
+        return;
+
+    }
+
+    else if (event.key === "Escape") {
+
+        clearSearch();
+        return;
+
+    }
+
+    rows.forEach(row => row.classList.remove("selected"));
+
+    if (rows[selectedRow]) {
+
+        rows[selectedRow].classList.add("selected");
+
+        const container = document.getElementById("results-container");
+
+const row = rows[selectedRow];
+
+const rowTop = row.offsetTop;
+const rowBottom = rowTop + row.offsetHeight;
+
+const reserve = row.offsetHeight * 3;   // drei Titel Abstand
+
+if (rowTop < container.scrollTop) {
+
+    container.scrollTop = rowTop - reserve;
+
+}
+else if (rowBottom > container.scrollTop + container.clientHeight - reserve) {
+
+    container.scrollTop =
+        rowBottom - container.clientHeight + reserve;
+
+}
+
+    }
 
 }

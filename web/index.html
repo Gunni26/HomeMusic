@@ -74,11 +74,12 @@ oninput="seekPlayer()">
         </label>
 
         <label>
-            <input type="radio" name="searchmode" value="year">
-            Jahr
-        </label>
+    <input type="radio" name="searchmode" value="year">
+    Jahr
+</label>
 
-    </div>
+
+</div>
 
     <div class="searchbox">
 
@@ -98,27 +99,41 @@ oninput="seekPlayer()">
     </div>
 
     <div id="count" class="count">
-        0 Treffer
-    </div>
+    0 Treffer
+</div>
+
+<div id="results-container">
 
     <table>
 
         <thead>
 
-        <tr>
-            <th>Interpret</th>
-            <th>Album</th>
-            <th>Titel</th>
-            <th>Jahr</th>
-            <th>▶</th>
-        </tr>
+<tr>
+    <th>Interpret</th>
+    <th>Album</th>
+    <th>Titel</th>
+    <th>Jahr</th>
 
-        </thead>
+    <th id="player-header">
+
+        <div id="mini-player">
+
+            HIER PLAYER
+
+        </div>
+
+    </th>
+
+</tr>
+
+</thead>
 
         <tbody id="results">
         </tbody>
 
     </table>
+
+</div>
 
 </div>
 

@@ -80,7 +80,7 @@ def search(q: str, mode: str = "all"):
         FROM songs
         WHERE {where}
         ORDER BY artist, album, track, title
-        LIMIT 100
+        LIMIT 2000
     """
 
     if mode == "all":
