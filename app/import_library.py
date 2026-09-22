@@ -1,4 +1,3 @@
-import sqlite3
 import time
 
 from database import connect, init_database
@@ -12,6 +11,16 @@ def import_library():
     conn = connect()
     cur = conn.cursor()
 
+    print("\nHomeMusic – schneller Musikimport")
+    print("-" * 40)
+
+    start = time.time()
+
+    # Alle bereits bekannten Dateien aus der Datenbank holen
+    cur.execute("SELECT filepath FROM songs")
+    existing_files = {row[0] for row in cur.fetchall()}
+
+    # Musikordner durchsuchen
     files = scan_library()
 
     total = len(files)
@@ -19,21 +28,27 @@ def import_library():
     skipped = 0
     errors = 0
 
-    start = time.time()
-
-    print(f"\nHomeMusic 0.1.0")
-    print("-" * 40)
-    print(f"{total} Musikdateien gefunden.\n")
+    print(f"{total} Musikdateien gefunden.")
+    print(f"{len(existing_files)} bereits in der Datenbank.")
+    print()
 
     for number, file in enumerate(files, start=1):
 
-        print(f"[{number}/{total}] {file.name}")
+        filepath = str(file)
+
+        # Bereits bekannte Datei sofort überspringen
+        if filepath in existing_files:
+            skipped += 1
+            continue
+
+        print(f"[NEU {number}/{total}] {file.name}")
 
         try:
             tags = read_tags(file)
 
             if tags is None:
                 errors += 1
+                print("  Fehler: Tags konnten nicht gelesen werden.")
                 continue
 
             cur.execute(
@@ -69,12 +84,13 @@ def import_library():
 
             if cur.rowcount == 1:
                 imported += 1
+                existing_files.add(filepath)
             else:
                 skipped += 1
 
         except Exception as e:
             errors += 1
-            print(f"Fehler: {e}")
+            print(f"  Fehler: {e}")
 
     conn.commit()
     conn.close()
@@ -82,9 +98,10 @@ def import_library():
     duration = round(time.time() - start, 1)
 
     print("\n" + "-" * 40)
-    print("Import abgeschlossen\n")
+    print("Import abgeschlossen")
+    print()
     print(f"Gefunden     : {total}")
-    print(f"Importiert   : {imported}")
+    print(f"Neu importiert: {imported}")
     print(f"Übersprungen : {skipped}")
     print(f"Fehler       : {errors}")
     print(f"Dauer        : {duration} Sekunden")

@@ -2,5 +2,22 @@ venv/
 __pycache__/
 *.pyc
 *.pyo
-*.db
 logs/
+backups/
+*.db-shm
+*.db-wal
+
+# Laufzeitdateien
+app/current_stream.txt
+app/current_stream_info.txt
+app/party_resume.json
+app/party_stop_marker.json
+app/party_transport_state.json
+app/receiver_control.json
+app/receiver_queue.json
+app/receiver_status.json
+app/receiver_volume.txt
+
+# Alte Sicherungsdateien
+*.bak
+*.bak_*

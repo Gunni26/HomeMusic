@@ -98,43 +98,22 @@
     </div>
 
     <div id="importbox">
-    <div id="receiver-volume-box">
-        <label for="receiverVolume">🔊 Lautstärke Empfänger</label>
 
-        <input
-            type="range"
-            id="receiverVolume"
-            min="0"
-            max="100"
-            value="100"
-            oninput="setReceiverVolume(this.value)">
-    </div>
+        <div id="receiver-volume-box">
+            
 
-
-
-        <button
-            id="importButton"
-            onclick="importMusic()">
-            🔄 Neue Musik einlesen
-        </button>
-
-        <div id="importStatus"></div>
+            <input
+                type="range"
+                id="receiverVolume"
+                min="0"
+                max="100"
+                value="100"
+                oninput="setReceiverVolume(this.value)">
+        </div>
 
     </div>
 
     <div id="playlistbox">
-
-        <input
-            type="text"
-            id="playlistName"
-            placeholder="Neue Playlist..."
-        >
-
-        <button
-            type="button"
-            onclick="createPlaylist()">
-            ➕ Playlist erstellen
-        </button>
 
         <select
             id="playlistSelect"
@@ -148,7 +127,7 @@
 
         <div id="playlistStatus"></div>
 
-    <div id="playlistSongs"></div>
+        <div id="playlistSongs"></div>
 
     </div>
 
@@ -198,3 +177,87 @@
 
 </body>
 </html>
+
+<style>
+#playlistbox {
+    margin-bottom: 0 !important;
+}
+
+#playlistbox + #count {
+    margin-top: 0 !important;
+}
+</style>
+
+<style>
+#playlistbox {
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+}
+
+#playlistbox select {
+    margin-bottom: 0 !important;
+}
+
+#playlistStatus,
+#playlistSongs {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+#count {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+</style>
+
+<style>
+#playlistbox {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    min-height: 0 !important;
+}
+
+#playlistbox select {
+    margin: 0 !important;
+    padding: 2px 6px !important;
+    height: 30px !important;
+}
+
+#playlistStatus,
+#playlistSongs {
+    display: none !important;
+}
+
+#count {
+    margin: 2px 0 0 0 !important;
+    padding: 0 !important;
+}
+</style>
+
+<style>
+#importbox {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+#receiver-volume-box {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+#playlistbox {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding: 0 !important;
+}
+
+#count {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding: 0 !important;
+}
+</style>

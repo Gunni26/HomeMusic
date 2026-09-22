@@ -1,0 +1,1690 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HomeMusic – Partymodus</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            text-align: center;
+        }
+
+        .party-header {
+            margin-top: 30px;
+        }
+
+        .brand {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .music-icon {
+            font-size: 42px;
+        }
+
+        h1 {
+            margin: 0;
+            color: #24538f;
+            font-size: 42px;
+        }
+
+        .subtitle {
+            margin: 8px 0 25px;
+            color: #555;
+            font-size: 18px;
+        }
+
+        .partymodus {
+            color: #24538f;
+            font-size: 28px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="party-header">
+
+        <div class="brand">
+            <span class="music-icon">🎵</span>
+            <h1>HomeMusic</h1>
+        </div>
+
+        <div class="subtitle">
+            Der schnellste Weg von der Suche zur Musik.
+        </div>
+
+        <div class="partymodus">
+            Partymodus
+        </div>
+
+    </div>
+
+</body>
+</html>
+
+<style>
+body {
+    text-align: left !important;
+}
+
+.party-header {
+    margin: 30px 20px 0 20px !important;
+}
+
+.brand {
+    justify-content: flex-start !important;
+}
+
+.subtitle {
+    text-align: left !important;
+}
+
+.partymodus {
+    text-align: left !important;
+}
+</style>
+
+<style>
+.party-create {
+    margin-top: 25px;
+    max-width: 500px;
+}
+
+.party-create input {
+    width: 280px;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #bbb;
+    border-radius: 6px;
+}
+
+.party-create button {
+    padding: 10px 16px;
+    margin-left: 6px;
+    font-size: 16px;
+    border: none;
+    border-radius: 6px;
+    background: #24538f;
+    color: white;
+    cursor: pointer;
+}
+
+.party-create button:hover {
+    opacity: 0.9;
+}
+
+.party-current {
+    margin-top: 20px;
+    font-size: 20px;
+    color: #24538f;
+    font-weight: bold;
+}
+</style>
+
+<script>
+async function createParty() {
+    const input = document.getElementById("partyName");
+    const name = input.value.trim();
+
+    if (!name) {
+        alert("Bitte einen Namen für die Party eingeben.");
+        return;
+    }
+
+    const response = await fetch(
+        "/party_create?name=" + encodeURIComponent(name)
+    );
+
+    const data = await response.json();
+
+    if (!data.success) {
+        alert(data.error || "Party konnte nicht erstellt werden.");
+        return;
+    }
+
+    document.getElementById("currentParty").textContent =
+        "Aktive Party: " + data.name;
+
+    input.value = "";
+}
+</script>
+
+<div class="party-create">
+    <input
+        id="partyName"
+        type="text"
+        placeholder="Name der Party"
+    >
+    <button onclick="createParty()">🎉 Party erstellen</button>
+
+    <div id="currentParty" class="party-current"></div>
+</div>
+
+
+<style>
+.party-players {
+    margin-top: 25px;
+    max-width: 600px;
+}
+
+.party-player {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.party-player-label {
+    width: 90px;
+    font-weight: bold;
+    color: #24538f;
+}
+
+.party-player input {
+    width: 220px;
+    padding: 8px;
+    font-size: 16px;
+    border: 1px solid #bbb;
+    border-radius: 6px;
+}
+
+.party-player button {
+    margin-left: 6px;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    background: #24538f;
+    color: white;
+    cursor: pointer;
+}
+
+.party-player-status {
+    margin-left: 8px;
+    color: #228b22;
+}
+</style>
+
+<div class="party-players">
+
+    <h3>Party-Player</h3>
+
+    <div class="party-player">
+        <div class="party-player-label">Player 01</div>
+        <input id="player01Name" type="text" placeholder="Name">
+        <button onclick="savePartyPlayer('player01')">Speichern</button>
+        <span id="player01Status" class="party-player-status"></span>
+    </div>
+
+    <div class="party-player">
+        <div class="party-player-label">Player 02</div>
+        <input id="player02Name" type="text" placeholder="Name">
+        <button onclick="savePartyPlayer('player02')">Speichern</button>
+        <span id="player02Status" class="party-player-status"></span>
+    </div>
+
+    <div class="party-player">
+        <div class="party-player-label">Player 03</div>
+        <input id="player03Name" type="text" placeholder="Name">
+        <button onclick="savePartyPlayer('player03')">Speichern</button>
+        <span id="player03Status" class="party-player-status"></span>
+    </div>
+
+    <div class="party-player">
+        <div class="party-player-label">Player 04</div>
+        <input id="player04Name" type="text" placeholder="Name">
+        <button onclick="savePartyPlayer('player04')">Speichern</button>
+        <span id="player04Status" class="party-player-status"></span>
+    </div>
+
+</div>
+
+<script>
+async function savePartyPlayer(player) {
+
+    const input = document.getElementById(player + "Name");
+    const status = document.getElementById(player + "Status");
+    const name = input.value.trim();
+
+    if (!name) {
+        alert("Bitte einen Namen eingeben.");
+        return;
+    }
+
+    const response = await fetch(
+        "/party_set_player?player=" +
+        encodeURIComponent(player) +
+        "&name=" +
+        encodeURIComponent(name)
+    );
+
+    const data = await response.json();
+
+    if (data.success) {
+
+        status.textContent = "✓ gespeichert";
+
+    } else {
+
+        alert(data.error || "Name konnte nicht gespeichert werden.");
+
+    }
+}
+</script>
+
+
+<!-- ============================================================
+     Gespeicherte Party und Player-Namen automatisch laden
+     ============================================================ -->
+
+<script>
+
+async function loadSavedPartyData() {
+
+    try {
+
+        // Aktive Party laden
+        const partyResponse = await fetch("/party_current");
+        const partyData = await partyResponse.json();
+
+        const currentParty = document.getElementById("currentParty");
+
+        if (currentParty && partyData.success && partyData.active) {
+            currentParty.textContent =
+                "Aktive Party: " + partyData.playlist.name;
+        }
+
+
+        // Gespeicherte Player-Namen laden
+        const playersResponse = await fetch("/party_players");
+        const playersData = await playersResponse.json();
+
+        if (playersData.success && playersData.players) {
+
+            playersData.players.forEach(player => {
+
+                const input =
+                    document.getElementById(player.player + "Name");
+
+                if (input) {
+                    input.value = player.name;
+                }
+
+                const status =
+                    document.getElementById(player.player + "Status");
+
+                if (status) {
+                    status.textContent = "✓ gespeichert";
+                }
+
+            });
+        }
+
+    } catch (error) {
+
+        console.error(
+            "Gespeicherte Party-Daten konnten nicht geladen werden:",
+            error
+        );
+
+    }
+}
+
+
+// Beim Öffnen der Seite automatisch laden
+loadSavedPartyData();
+
+</script>
+
+
+<!-- ============================================================
+     Player 05 + 06
+     ============================================================ -->
+
+<style>
+.party-player-extra {
+    display:flex;
+    align-items:center;
+    margin-bottom:8px;
+}
+
+.party-player-extra .party-player-label {
+    width:90px;
+    font-weight:bold;
+    color:#24538f;
+}
+
+.party-player-extra input {
+    width:220px;
+    padding:8px;
+    font-size:16px;
+    border:1px solid #bbb;
+    border-radius:6px;
+}
+
+.party-player-extra button {
+    margin-left:6px;
+    padding:8px 12px;
+    border:none;
+    border-radius:6px;
+    background:#24538f;
+    color:white;
+    cursor:pointer;
+}
+
+.party-player-extra .party-player-status {
+    margin-left:8px;
+    color:#228b22;
+}
+</style>
+
+<div class="party-player-extra">
+    <div class="party-player-label">Player 05</div>
+    <input id="player05Name" type="text" placeholder="Name">
+    <button onclick="savePartyPlayer('player05')">Speichern</button>
+    <span id="player05Status" class="party-player-status"></span>
+</div>
+
+<div class="party-player-extra">
+    <div class="party-player-label">Player 06</div>
+    <input id="player06Name" type="text" placeholder="Name">
+    <button onclick="savePartyPlayer('player06')">Speichern</button>
+    <span id="player06Status" class="party-player-status"></span>
+</div>
+
+
+<!-- ============================================================
+     Wunschübersicht im Partymodus
+     ============================================================ -->
+
+<style>
+.party-request-list {
+    margin-top: 30px;
+    max-width: 750px;
+}
+
+.party-request-list-title {
+    font-size: 22px;
+    font-weight: bold;
+    color: #24538f;
+    margin-bottom: 12px;
+}
+
+.party-request-list-row {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    margin-bottom: 6px;
+    background: #f4f6f8;
+    border-radius: 6px;
+}
+
+.party-request-list-name {
+    width: 110px;
+    font-weight: bold;
+    color: #24538f;
+}
+
+.party-request-list-song {
+    flex: 1;
+}
+
+.party-request-list-time {
+    font-size: 13px;
+    color: #777;
+    margin-left: 10px;
+}
+
+.party-request-list-empty {
+    color: #777;
+}
+
+.party-request-list-row.party-playing {
+    background: #e7f0ff !important;
+    font-weight: 600;
+    border-left: 4px solid #24538f;
+}
+
+.party-request-list-row.party-playing .party-request-list-song::before {
+    content: "▶ ";
+    color: #24538f;
+    font-weight: bold;
+}
+
+</style>
+
+<div class="party-request-list">
+    <div class="party-request-list-title">🎵 Musikwünsche</div>
+    <div id="partyRequestList">
+        <div class="party-request-list-empty">
+            Noch keine Wünsche.
+        </div>
+    </div>
+</div>
+
+<script>
+
+async function loadPartyRequestList() {
+
+    try {
+
+        const response = await fetch(
+            "/party_requests?t=" + Date.now(),
+            { cache: "no-store" }
+        );
+
+        const data = await response.json();
+
+        const box =
+            document.getElementById("partyRequestList");
+
+        if (!box) return;
+
+        if (
+            !data.success ||
+            !data.requests ||
+            data.requests.length === 0
+        ) {
+            box.innerHTML =
+                '<div class="party-request-list-empty">' +
+                'Noch keine Wünsche.' +
+                '</div>';
+
+            return;
+        }
+
+        /*
+         * Aktuellen Titel aus dem Receiver holen.
+         * request_id ist entscheidend, damit doppelte Titel
+         * nicht gleichzeitig markiert werden.
+         */
+        let currentRequestId = null;
+
+        try {
+
+            const queueResponse = await fetch(
+                "/receiver_queue?t=" + Date.now(),
+                { cache: "no-store" }
+            );
+
+            const queueData =
+                await queueResponse.json();
+
+            if (
+                queueData.success &&
+                queueData.song &&
+                queueData.song.request_id
+            ) {
+                currentRequestId =
+                    queueData.song.request_id;
+            }
+
+        } catch (error) {
+            console.error(
+                "Aktuellen Party-Titel:",
+                error
+            );
+        }
+
+        /*
+         * Nur neu aufbauen, wenn sich die Anzahl oder
+         * die Reihenfolge der Wünsche geändert hat.
+         */
+        const newSignature = data.requests
+            .map(request => request.id)
+            .join(",");
+
+        if (box.dataset.signature !== newSignature) {
+
+            box.dataset.signature = newSignature;
+            box.innerHTML = "";
+
+            data.requests.forEach(request => {
+
+                const row =
+                    document.createElement("div");
+
+                row.className =
+                    "party-request-list-row";
+
+                row.dataset.requestId =
+                    String(request.id);
+
+                const name =
+                    document.createElement("div");
+
+                name.className =
+                    "party-request-list-name";
+
+                name.textContent =
+                    request.requester_name;
+
+                const song =
+                    document.createElement("div");
+
+                song.className =
+                    "party-request-list-song";
+
+                song.textContent =
+                    (request.artist || "") +
+                    " – " +
+                    (request.title || "");
+
+                row.appendChild(name);
+                row.appendChild(song);
+
+                box.appendChild(row);
+            });
+        }
+
+        /*
+         * Markierung aktualisieren, ohne die Liste
+         * neu aufzubauen oder die Scrollposition
+         * unnötig zu verändern.
+         */
+        const rows =
+            box.querySelectorAll(
+                ".party-request-list-row"
+            );
+
+        rows.forEach(row => {
+
+            const isPlaying =
+                currentRequestId !== null &&
+                row.dataset.requestId ===
+                String(currentRequestId);
+
+            row.classList.toggle(
+                "party-playing",
+                isPlaying
+            );
+        });
+
+        /*
+         * Nur wenn der laufende Titel außerhalb des
+         * sichtbaren Bereichs liegt, scrollen.
+         *
+         * Dabei bleibt er ungefähr auf Position 5.
+         */
+        if (currentRequestId !== null) {
+
+            const playingRow =
+                box.querySelector(
+                    '.party-request-list-row[data-request-id="' +
+                    currentRequestId +
+                    '"]'
+                );
+
+            if (playingRow) {
+
+                const boxRect =
+                    box.getBoundingClientRect();
+
+                const rowRect =
+                    playingRow.getBoundingClientRect();
+
+                const visibleTop =
+                    boxRect.top;
+
+                const visibleBottom =
+                    boxRect.bottom;
+
+                const isAbove =
+                    rowRect.top < visibleTop;
+
+                const isBelow =
+                    rowRect.bottom > visibleBottom;
+
+                const rowsArray =
+                    Array.from(rows);
+
+                const playingIndex =
+                    rowsArray.indexOf(
+                        playingRow
+                    );
+
+                if (playingIndex >= 0) {
+
+                    /*
+                     * Nur automatisch scrollen, wenn sich
+                     * der laufende Titel geändert hat.
+                     *
+                     * Wenn der Benutzer selbst scrollt,
+                     * bleibt seine Position erhalten.
+                     */
+                    const currentKey =
+                        String(currentRequestId);
+
+                    if (
+                        box.dataset.lastAutoScrolledRequestId ===
+                        currentKey
+                    ) {
+                        return;
+                    }
+
+                    box.dataset.lastAutoScrolledRequestId =
+                        currentKey;
+
+                    /*
+                     * Der laufende Titel soll auf
+                     * der 5. sichtbaren Zeile stehen.
+                     */
+                    const visiblePosition = 4;
+
+                    const boxRect =
+                        box.getBoundingClientRect();
+
+                    const playingRect =
+                        playingRow.getBoundingClientRect();
+
+                    const rowHeight =
+                        playingRow.getBoundingClientRect().height;
+
+                    /*
+                     * Zielposition des laufenden Titels:
+                     * 5. Zeile innerhalb der sichtbaren Box.
+                     */
+                    const targetTop =
+                        boxRect.top +
+                        (rowHeight * visiblePosition);
+
+                    /*
+                     * Tatsächliche Differenz zwischen
+                     * aktueller und gewünschter Position.
+                     */
+                    const scrollChange =
+                        playingRect.top -
+                        targetTop;
+
+                    /*
+                     * Neuer Scrollwert.
+                     */
+                    let newScroll =
+                        box.scrollTop +
+                        scrollChange;
+
+                    /*
+                     * Scrollwert auf den echten Bereich
+                     * der Liste begrenzen.
+                     */
+                    const maxScroll =
+                        Math.max(
+                            0,
+                            box.scrollHeight -
+                            box.clientHeight
+                        );
+
+                    newScroll =
+                        Math.max(
+                            0,
+                            Math.min(
+                                newScroll,
+                                maxScroll
+                            )
+                        );
+
+                    box.scrollTop = newScroll;
+                }
+            }
+        }
+
+    } catch (error) {
+
+        console.error(
+            "Fehler beim Laden der Musikwünsche:",
+            error
+        );
+    }
+}
+
+// Sofort laden
+loadPartyRequestList();
+
+
+// Automatisch aktualisieren
+setInterval(function() {
+    loadPartyRequestList();
+}, 1000);
+
+</script>
+
+
+<!-- ============================================================
+     Partymodus – zweispaltiges Layout
+     Player links / Musikwünsche rechts
+     ============================================================ -->
+
+<style>
+
+body {
+    display: grid;
+    grid-template-columns: 560px 1fr;
+    column-gap: 50px;
+    align-items: start;
+    text-align: left !important;
+    padding: 25px 30px;
+    box-sizing: border-box;
+}
+
+.party-header {
+    grid-column: 1 / -1;
+    margin: 0 0 20px 0 !important;
+}
+
+.party-create {
+    grid-column: 1 / -1;
+    margin: 0 0 20px 0 !important;
+}
+
+.party-players {
+    grid-column: 1;
+    grid-row: 3;
+    margin: 0 !important;
+    width: 100%;
+}
+
+.party-request-list {
+    grid-column: 2;
+    grid-row: 3;
+    margin: 0 !important;
+    width: 100%;
+    max-width: 750px;
+}
+
+.party-request-list-title {
+    text-align: center;
+    margin-top: 0 !important;
+}
+
+.party-request-list-row {
+    min-height: 38px;
+    box-sizing: border-box;
+}
+
+@media (max-width: 900px) {
+
+    body {
+        display: block;
+        padding: 15px;
+    }
+
+    .party-header,
+    .party-create,
+    .party-players,
+    .party-request-list {
+        width: 100%;
+        max-width: none;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+
+    .party-request-list {
+        margin-top: 30px !important;
+    }
+
+}
+
+</style>
+
+
+<!-- ============================================================
+     Partymodus – endgültiges Layout
+     6 Player links / Musikwünsche rechts
+     Nur die Wunschliste scrollt
+     ============================================================ -->
+
+<style>
+
+@media (min-width: 901px) {
+
+    body {
+        display: grid !important;
+        grid-template-columns: 560px minmax(500px, 1fr) !important;
+        grid-template-rows: auto auto auto 1fr !important;
+        column-gap: 50px !important;
+        align-items: start !important;
+        text-align: left !important;
+        padding: 25px 30px !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+    }
+
+    .party-header {
+        grid-column: 1 !important;
+        grid-row: 1 !important;
+        margin: 0 0 20px 0 !important;
+    }
+
+    .party-create {
+        grid-column: 1 !important;
+        grid-row: 2 !important;
+        margin: 0 0 15px 0 !important;
+    }
+
+    .party-current {
+        grid-column: 1 !important;
+        grid-row: 3 !important;
+        margin: 0 0 20px 0 !important;
+    }
+
+    .party-players {
+        grid-column: 1 !important;
+        grid-row: 4 !important;
+        margin: 0 !important;
+        width: 100% !important;
+    }
+
+    /* Player 05 + 06 werden per Script in .party-players verschoben */
+    .party-player-extra {
+        margin-bottom: 8px !important;
+    }
+
+    .party-request-list {
+        grid-column: 2 !important;
+        grid-row: 1 / 5 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        height: calc(100vh - 50px) !important;
+    }
+
+    .party-request-list-title {
+        flex: 0 0 auto !important;
+        text-align: center !important;
+        margin: 0 0 12px 0 !important;
+    }
+
+    #partyRequestList {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        padding-right: 5px !important;
+    }
+
+}
+
+/* Mobil bleibt die Seite normal untereinander */
+
+@media (max-width: 900px) {
+
+    body {
+        display: block !important;
+        overflow: auto !important;
+        padding: 15px !important;
+    }
+
+    .party-player-extra {
+        margin-bottom: 8px !important;
+    }
+
+    .party-request-list {
+        margin-top: 30px !important;
+        max-width: none !important;
+    }
+
+    #partyRequestList {
+        max-height: 60vh !important;
+        overflow-y: auto !important;
+    }
+
+}
+
+</style>
+
+<script>
+
+/*
+ * Player 05 und 06 wurden bisher außerhalb
+ * der Player-Gruppe eingefügt.
+ *
+ * Wir verschieben sie jetzt in dieselbe Gruppe
+ * wie Player 01–04.
+ */
+
+(function() {
+
+    const playerBox = document.querySelector(".party-players");
+
+    if (!playerBox) return;
+
+    document
+        .querySelectorAll(".party-player-extra")
+        .forEach(function(player) {
+            playerBox.appendChild(player);
+        });
+
+})();
+
+</script>
+
+
+<!-- ============================================================
+     Musikwünsche – Überschrift direkt über der ersten Zeile
+     ============================================================ -->
+
+<style>
+
+@media (min-width: 901px) {
+
+    .party-request-list-title {
+        text-align: left !important;
+        margin: 0 0 12px 0 !important;
+        padding-left: 0 !important;
+    }
+
+    .party-request-list-row {
+        padding-left: 0 !important;
+    }
+
+    .party-request-list-name {
+        width: 110px !important;
+    }
+
+}
+
+</style>
+
+
+
+<!-- ============================================================
+     Partymodus – aktuelle Wiedergabe und Steuerung
+     ============================================================ -->
+
+<style>
+
+.party-now-playing {
+    margin: 0 0 10px 0;
+    padding: 0;
+    color: #d00000;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.party-now-time {
+    margin-left: 18px;
+    white-space: nowrap;
+}
+
+.party-transport {
+    display: flex;
+    gap: 8px;
+    margin: 0 0 14px 0;
+    flex-wrap: wrap;
+}
+
+.party-transport button {
+    border: 1px solid #bbb;
+    background: #f5f5f5;
+    border-radius: 6px;
+    padding: 7px 14px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.party-transport button:hover {
+    background: #e8e8e8;
+}
+
+.party-transport button:active {
+    transform: translateY(1px);
+}
+
+</style>
+
+<script>
+
+(function() {
+
+    function formatPartyTime(seconds) {
+
+        seconds = Number(seconds);
+
+        if (!Number.isFinite(seconds) || seconds < 0) {
+            seconds = 0;
+        }
+
+        seconds = Math.floor(seconds);
+
+        const minutes =
+            Math.floor(seconds / 60);
+
+        const secs =
+            seconds % 60;
+
+        return String(minutes).padStart(2, "0") +
+            ":" +
+            String(secs).padStart(2, "0");
+    }
+
+
+    function createPartyTransport() {
+
+        const title =
+            document.querySelector(
+                ".party-request-list-title"
+            );
+
+        const list =
+            document.getElementById(
+                "partyRequestList"
+            );
+
+        if (!title || !list) {
+            return false;
+        }
+
+        if (
+            document.getElementById(
+                "partyNowPlaying"
+            )
+        ) {
+            return true;
+        }
+
+        const nowPlaying =
+            document.createElement("div");
+
+        nowPlaying.id =
+            "partyNowPlaying";
+
+        nowPlaying.className =
+            "party-now-playing";
+
+        nowPlaying.innerHTML =
+            'Jetzt läuft: <span id="partyCurrentSong">–</span>' +
+            '<span class="party-now-time">' +
+            'Noch <span id="partyRemaining">00:00</span>' +
+            '</span>';
+
+        const controls =
+            document.createElement("div");
+
+        controls.id =
+            "partyTransport";
+
+        controls.className =
+            "party-transport";
+
+        controls.innerHTML =
+
+            '<button type="button" onclick="partyStart()">▶ Start</button>' +
+
+            '<button type="button" onclick="partyStop()">■ Stopp</button>' +
+
+            '<button type="button" onclick="partyNext()">⏭ Vor</button>' +
+
+            '<button type="button" onclick="partyPrevious()">⏮ Zurück</button>' +
+            '<button type="button" onclick="partyRestartList()">🔄 Liste neu starten</button>' +
+            '<button type="button" onclick="partyResumeList()">▶ Fortsetzen</button>';
+
+        title.insertAdjacentElement(
+            "afterend",
+            nowPlaying
+        );
+
+        nowPlaying.insertAdjacentElement(
+            "afterend",
+            controls
+        );
+
+        return true;
+    }
+
+
+
+    /*
+     * Party-Liste neu starten
+     */
+    window.partyRestartList = async function() {
+
+        try {
+
+            const response =
+                await fetch(
+                    "/party_start_requests?t=" +
+                    Date.now(),
+                    {
+                        cache: "no-store"
+                    }
+                );
+
+            if (!response.ok) {
+                alert("Die Party-Liste konnte nicht neu gestartet werden.");
+                return;
+            }
+
+            partyResumeLastSignature = "";
+
+            /*
+             * Die neue Position sofort sichern.
+             */
+            setTimeout(
+                function() {
+                    savePartyPosition(false);
+                },
+                500
+            );
+
+        } catch (e) {
+
+            alert("Fehler beim Neustart der Party-Liste.");
+        }
+    };
+
+
+    /*
+     * Aktuelle Position auf dem Pi speichern
+     */
+    window.savePartyPosition = async function(showMessage) {
+
+        try {
+
+            const response =
+                await fetch(
+                    "/receiver_queue?t=" +
+                    Date.now(),
+                    {
+                        cache: "no-store"
+                    }
+                );
+
+            if (!response.ok) {
+
+                if (showMessage) {
+                    alert(
+                        "Receiver-Queue konnte nicht gelesen werden."
+                    );
+                }
+
+                return;
+            }
+
+            const queue =
+                await response.json();
+
+            console.log(
+                "HomeMusic Resume Queue:",
+                queue
+            );
+
+            if (!Array.isArray(queue.songs) ||
+                !queue.songs.length) {
+
+                if (showMessage) {
+                    alert(
+                        "Die aktuelle Musikliste ist leer."
+                    );
+                }
+
+                return;
+            }
+
+            /*
+             * Die Queue kann die Position entweder
+             * als index oder current_index liefern.
+             */
+            let index;
+
+            if (Number.isInteger(queue.index)) {
+
+                index = queue.index;
+
+            } else if (
+                Number.isInteger(queue.current_index)
+            ) {
+
+                index = queue.current_index;
+
+            } else {
+
+                index = 0;
+            }
+
+            index =
+                Math.max(
+                    0,
+                    Math.min(
+                        index,
+                        queue.songs.length - 1
+                    )
+                );
+
+            const saveResponse =
+                await fetch(
+                    "/party_resume_save",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+                        body: JSON.stringify({
+                            songs: queue.songs,
+                            index: index
+                        })
+                    }
+                );
+
+            const result =
+                await saveResponse.json();
+
+            console.log(
+                "HomeMusic Resume gespeichert:",
+                result
+            );
+
+            if (!saveResponse.ok ||
+                !result.ok) {
+
+                if (showMessage) {
+                    alert(
+                        "Position konnte nicht gespeichert werden."
+                    );
+                }
+
+                return;
+            }
+
+            if (showMessage) {
+
+                alert(
+                    "Position gespeichert: Titel " +
+                    (index + 1) +
+                    " von " +
+                    queue.songs.length
+                );
+            }
+
+        } catch (e) {
+
+            console.error(
+                "Resume speichern:",
+                e
+            );
+
+            if (showMessage) {
+
+                alert(
+                    "Fehler beim Speichern der Position: " +
+                    e.message
+                );
+            }
+        }
+    };
+
+
+    /*
+     * Gespeicherte Position fortsetzen
+     */
+    window.partyResumeList = async function() {
+
+        try {
+
+            const response =
+                await fetch(
+                    "/party_resume_start",
+                    {
+                        method: "POST"
+                    }
+                );
+
+            const data =
+                await response.json();
+
+            if (!data.ok) {
+
+                alert(
+                    data.message ||
+                    "Keine gespeicherte Position vorhanden."
+                );
+
+                return;
+            }
+
+        } catch (e) {
+
+            alert(
+                "Die gespeicherte Position konnte nicht geladen werden."
+            );
+        }
+    };
+
+
+    /*
+     * Position automatisch alle 2 Sekunden sichern.
+     * Dadurch bleibt die letzte Position auch bei
+     * einem Rechner-/Browserabsturz erhalten.
+     */
+    setInterval(
+        function() {
+            savePartyPosition(false);
+        },
+        2000
+    );
+
+
+    window.partyStart = async function() {
+
+        try {
+
+            const response =
+                await fetch(
+                    "/party_start_after_stop?t=" +
+                    Date.now(),
+                    {
+                        cache: "no-store"
+                    }
+                );
+
+            const data =
+                await response.json();
+
+            if (!data.success) {
+
+                if (data.finished) {
+                    alert("Das Ende der Wunschliste ist erreicht.");
+                } else {
+                    alert(
+                        data.error ||
+                        "Party konnte nicht gestartet werden."
+                    );
+                }
+
+                return;
+            }
+
+            if (data.song) {
+                updatePartySong(data.song);
+            }
+
+        } catch (error) {
+
+            console.error(
+                "Start:",
+                error
+            );
+        }
+    };
+
+
+    window.partyStop = async function() {
+
+        try {
+
+            const response =
+                await fetch(
+                    "/party_stop_mark?t=" +
+                    Date.now(),
+                    {
+                        cache: "no-store"
+                    }
+                );
+
+            const data =
+                await response.json();
+
+            if (!data.success) {
+                console.error(
+                    "Stopp:",
+                    data.error
+                );
+            }
+
+        } catch (error) {
+
+            console.error(
+                "Stopp:",
+                error
+            );
+        }
+    };
+
+
+    window.partyNext = async function() {
+
+        try {
+
+            const response =
+                await fetch(
+                    "/party_next_request?direction=1&t=" +
+                    Date.now()
+                );
+
+            const data =
+                await response.json();
+
+            if (
+                data.success &&
+                data.song
+            ) {
+                updatePartySong(
+                    data.song
+                );
+            }
+
+        } catch (error) {
+
+            console.error(
+                "Vor:",
+                error
+            );
+        }
+    };
+
+
+    window.partyPrevious = async function() {
+
+        try {
+
+            const response =
+                await fetch(
+                    "/party_next_request?direction=-1&t=" +
+                    Date.now()
+                );
+
+            const data =
+                await response.json();
+
+            if (
+                data.success &&
+                data.song
+            ) {
+                updatePartySong(
+                    data.song
+                );
+            }
+
+        } catch (error) {
+
+            console.error(
+                "Zurück:",
+                error
+            );
+        }
+    };
+
+
+    function updatePartySong(song) {
+
+        const element =
+            document.getElementById(
+                "partyCurrentSong"
+            );
+
+        if (!element) return;
+
+        element.textContent =
+            (song.artist || "") +
+            " – " +
+            (song.title || "");
+    }
+
+
+    async function loadPartyReceiverStatus() {
+
+        try {
+
+            const response =
+                await fetch(
+                    "/receiver_status?t=" +
+                    Date.now(),
+                    { cache: "no-store" }
+                );
+
+            const data =
+                await response.json();
+
+            if (!data.success) {
+                return;
+            }
+
+            const song =
+                document.getElementById(
+                    "partyCurrentSong"
+                );
+
+            const remaining =
+                document.getElementById(
+                    "partyRemaining"
+                );
+
+            if (!song || !remaining) {
+                return;
+            }
+
+            if (
+                data.artist ||
+                data.title
+            ) {
+
+                song.textContent =
+                    (data.artist || "") +
+                    " – " +
+                    (data.title || "");
+
+            } else {
+
+                song.textContent = "–";
+            }
+
+            const rest =
+                Math.max(
+                    0,
+                    Number(data.duration || 0) -
+                    Number(data.current || 0)
+                );
+
+            remaining.textContent =
+                formatPartyTime(rest);
+
+        } catch (error) {
+
+            console.error(
+                "Partymodus Receiver-Status:",
+                error
+            );
+        }
+    }
+
+
+    function initPartyTransport() {
+
+        if (!createPartyTransport()) {
+            setTimeout(
+                initPartyTransport,
+                200
+            );
+            return;
+        }
+
+        loadPartyReceiverStatus();
+
+        setInterval(
+            loadPartyReceiverStatus,
+            500
+        );
+    }
+
+
+    initPartyTransport();
+
+})();
+
+</script>
+
+
+<script>
+
+
+
+<script>
+
+<script>
+
+<script>
+
+
+
+<!-- ============================================================
+     Partymodus – manueller Scroll bleibt stehen
+     ============================================================ -->
+<script>
+(function() {
+
+    const box = document.getElementById("partyRequestList");
+
+    if (!box) return;
+
+    let manualScroll = false;
+    let savedScrollTop = 0;
+
+    /*
+     * Sobald der Benutzer die Wunschliste selbst bewegt,
+     * bekommt der manuelle Scroll Vorrang.
+     */
+    box.addEventListener("pointerdown", function() {
+        manualScroll = true;
+        savedScrollTop = box.scrollTop;
+    });
+
+    box.addEventListener("wheel", function() {
+        manualScroll = true;
+        savedScrollTop = box.scrollTop;
+    }, { passive: true });
+
+    box.addEventListener("scroll", function() {
+
+        if (manualScroll) {
+            savedScrollTop = box.scrollTop;
+        }
+
+    }, { passive: true });
+
+    /*
+     * Die bisherige automatische Scrollfunktion darf
+     * die vom Benutzer gewählte Position nicht mehr verändern.
+     */
+    setInterval(function() {
+
+        if (manualScroll &&
+            Math.abs(box.scrollTop - savedScrollTop) > 1) {
+
+            box.scrollTop = savedScrollTop;
+        }
+
+    }, 100);
+
+})();
+</script>
+

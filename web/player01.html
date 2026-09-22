@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HomeMusic 0.2.3</title>
+
+    <link rel="stylesheet" href="/web/style.css?v=25">
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="topbar">
+
+        <div class="brand-row">
+            <span class="music-icon">🎵</span>
+            <h1>HomeMusic</h1>
+        </div>
+
+
+
+    </div>
+
+    <p class="subtitle">
+        Der schnellste Weg von der Suche zur Musik.
+    </p>
+
+    <div id="currentSong">
+        🎵 Kein Titel ausgewählt
+    </div>
+
+    <div class="filterbox">
+
+        <label>
+            <input type="radio" name="searchmode" value="all" checked>
+            Alles
+        </label>
+
+        <label>
+            <input type="radio" name="searchmode" value="artist">
+            Interpret
+        </label>
+
+        <label>
+            <input type="radio" name="searchmode" value="album">
+            Album
+        </label>
+
+        <label>
+            <input type="radio" name="searchmode" value="title">
+            Titel
+        </label>
+
+        <label>
+            <input type="radio" name="searchmode" value="year">
+            Jahr
+        </label>
+
+    </div>
+
+    <div class="searchbox">
+
+        <input
+            type="text"
+            id="search"
+            placeholder="Interpret, Album, Titel oder Jahr..."
+            autofocus>
+
+        <button
+            id="clearbutton"
+            onclick="clearSearch()"
+            title="Suche löschen">
+            ❌
+        </button>
+
+    </div>
+
+    <div id="importbox">
+
+        <div id="receiver-volume-box">
+            
+
+            <input
+                type="range"
+                id="receiverVolume"
+                min="0"
+                max="100"
+                value="100"
+                oninput="setReceiverVolume(this.value)">
+        </div>
+
+    </div>
+
+    <div id="count" class="count">
+        0 Treffer
+    </div>
+
+    <div id="results-container">
+
+        <table>
+
+            <thead>
+
+                <tr>
+                    <th>Interpret</th>
+                    <th>Album</th>
+                    <th>Titel</th>
+                    <th>Jahr</th>
+                </tr>
+
+            </thead>
+
+            <tbody id="results">
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+<footer id="version">
+    v0.2.3
+</footer>
+
+
+<script>
+let partyTimer = null;
+let partySongs = [];
+
+document.addEventListener("DOMContentLoaded", () => {
+
+    const search = document.getElementById("search");
+
+    if (!search) return;
+
+    search.addEventListener("input", () => {
+        clearTimeout(partyTimer);
+        partyTimer = setTimeout(searchMusicParty01, 250);
+    });
+
+    document.querySelectorAll("input[name='searchmode']").forEach(radio => {
+        radio.addEventListener("change", searchMusicParty01);
+    });
+});
+
+async function searchMusicParty01() {
+
+    const text = document.getElementById("search").value.trim();
+    const mode = document.querySelector(
+        "input[name='searchmode']:checked"
+    ).value;
+
+    const count = document.getElementById("count");
+
+    if (text === "") {
+        partySongs = [];
+        count.innerHTML = "0 Treffer";
+        document.getElementById("results").innerHTML = "";
+        return;
+    }
+
+    count.innerHTML = "🔍 Suche...";
+
+    const response = await fetch(
+        "/search?q=" +
+        encodeURIComponent(text) +
+        "&mode=" +
+        encodeURIComponent(mode)
+    );
+
+    partySongs = await response.json();
+
+    count.innerHTML = "🎵 " + partySongs.length + " Treffer";
+
+    let html = "";
+
+    partySongs.forEach((song) => {
+
+        const path = encodeURIComponent(song.filepath);
+        const artist = (song.artist || "").replace(/'/g, "\\'");
+        const title = (song.title || "").replace(/'/g, "\\'");
+
+        html += `
+        <tr onclick="addToParty('${path}', '${artist}', '${title}')">
+            <td>${song.artist || "-"}</td>
+            <td>${song.album || "-"}</td>
+            <td>${song.title || "-"}</td>
+            <td>${song.year || "-"}</td>
+        </tr>
+        `;
+    });
+
+    document.getElementById("results").innerHTML = html;
+}
+</script>
+
+
+
+
+<script>
+function clearSearch() {
+    const search = document.getElementById("search");
+    search.value = "";
+    document.getElementById("results").innerHTML = "";
+    document.getElementById("count").innerHTML = "0 Treffer";
+}
+
+async function addToParty(path, artist, title) {
+
+    try {
+
+        const response = await fetch(
+            "/party_add?path=" +
+            path +
+            "&artist=" +
+            encodeURIComponent(artist) +
+            "&title=" +
+            encodeURIComponent(title) +
+            "&player=player01"
+        );
+
+        const data = await response.json();
+
+        if (data.success) {
+            console.log("Zur Party hinzugefügt:", data.title);
+
+            const count = document.getElementById("count");
+
+            if (count) {
+                count.textContent = "🎉 Zur Party hinzugefügt: " + data.title;
+            }
+
+        } else {
+            console.error("Party-Titel konnte nicht hinzugefügt werden.");
+        }
+
+    } catch (error) {
+
+        console.error("Party:", error);
+
+    }
+}
+</script>
+
+</body>
+</html>
+
+<style>
+#playlistbox {
+    margin-bottom: 0 !important;
+}
+
+#playlistbox + #count {
+    margin-top: 0 !important;
+}
+</style>
+
+<style>
+#playlistbox {
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+}
+
+#playlistbox select {
+    margin-bottom: 0 !important;
+}
+
+#playlistStatus,
+#playlistSongs {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+#count {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+</style>
+
+<style>
+#playlistbox {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    min-height: 0 !important;
+}
+
+#playlistbox select {
+    margin: 0 !important;
+    padding: 2px 6px !important;
+    height: 30px !important;
+}
+
+#playlistStatus,
+#playlistSongs {
+    display: none !important;
+}
+
+#count {
+    margin: 2px 0 0 0 !important;
+    padding: 0 !important;
+}
+</style>
+
+<style>
+#importbox {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+#receiver-volume-box {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+#playlistbox {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding: 0 !important;
+}
+
+#count {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding: 0 !important;
+}
+</style>
+
+<script>
+async function addToParty(path, artist, title) {
+
+    try {
+
+        const response = await fetch(
+            "/party_add_song?path=" +
+            path +
+            "&artist=" +
+            encodeURIComponent(artist) +
+            "&title=" +
+            encodeURIComponent(title) +
+            "&player=player01"
+        );
+
+        const data = await response.json();
+
+        if (data.success) {
+
+            console.log(
+                "Dauerhaft in Party-Playlist gespeichert:",
+                data.title
+            );
+
+            const count = document.getElementById("count");
+
+            if (count) {
+                count.textContent =
+                    "🎉 Gespeichert: " + data.title;
+            }
+
+        } else {
+
+            alert(data.error || "Titel konnte nicht gespeichert werden.");
+
+        }
+
+    } catch (error) {
+
+        console.error(error);
+        alert("Fehler beim Speichern des Titels.");
+
+    }
+}
+</script>
+
+
+<script>
+async function addToParty(path, artist, title) {
+
+    try {
+
+        const response = await fetch(
+            "/party_add_request?path=" +
+            path +
+            "&artist=" +
+            encodeURIComponent(artist) +
+            "&title=" +
+            encodeURIComponent(title) +
+            "&player=player01"
+        );
+
+        const data = await response.json();
+
+        if (data.success) {
+
+            console.log(
+                "Wunsch gespeichert:",
+                data.requester_name,
+                data.title
+            );
+
+            const count = document.getElementById("count");
+
+            if (count) {
+                count.textContent =
+                    "🎉 " + data.requester_name +
+                    " → " + data.title;
+            }
+
+        } else {
+
+            alert(data.error || "Wunsch konnte nicht gespeichert werden.");
+
+        }
+
+    } catch (error) {
+
+        console.error(error);
+        alert("Fehler beim Speichern des Wunsches.");
+
+    }
+}
+</script>
+
+
+<!-- ============================================================
+     Party-Wünsche – Anzeige mit 2-Minuten-Löschung
+     ============================================================ -->
+
+<style>
+.party-requests-box {
+    margin: 25px 0;
+    max-width: 700px;
+}
+
+.party-requests-title {
+    font-size: 20px;
+    font-weight: bold;
+    color: #24538f;
+    margin-bottom: 10px;
+}
+
+.party-request {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    margin-bottom: 6px;
+    background: #f4f6f8;
+    border-radius: 6px;
+}
+
+.party-request-text {
+    flex: 1;
+}
+
+.party-request-name {
+    font-weight: bold;
+    color: #24538f;
+}
+
+.party-request-delete {
+    border: none;
+    background: #d9534f;
+    color: white;
+    border-radius: 5px;
+    padding: 6px 10px;
+    cursor: pointer;
+}
+
+.party-request-delete:hover {
+    opacity: .85;
+}
+
+.party-request-time {
+    font-size: 13px;
+    color: #777;
+    min-width: 45px;
+    text-align: right;
+}
+
+.party-request-empty {
+    color: #777;
+    font-size: 14px;
+}
+</style>
+
+<div class="party-requests-box">
+    <div class="party-requests-title">🎵 Meine Musikwünsche</div>
+    <div id="partyRequests">
+        <div class="party-request-empty">Noch keine Wünsche.</div>
+    </div>
+</div>
+
+<script>
+
+async function loadPartyRequests() {
+
+    try {
+
+        const response = await fetch("/party_requests");
+        const data = await response.json();
+
+        const box = document.getElementById("partyRequests");
+
+        if (!data.success || !data.requests || data.requests.length === 0) {
+            box.innerHTML =
+                '<div class="party-request-empty">Noch keine Wünsche.</div>';
+            return;
+        }
+
+        box.innerHTML = "";
+
+        data.requests.forEach(request => {
+
+            const requestedTime =
+                new Date(request.requested.replace(" ", "T") + "Z");
+
+            const now = new Date();
+
+            let remaining =
+                120 - Math.floor((now - requestedTime) / 1000);
+
+            const row = document.createElement("div");
+            row.className = "party-request";
+            row.id = "party-request-" + request.id;
+
+            const text = document.createElement("div");
+            text.className = "party-request-text";
+
+            text.innerHTML =
+                '<span class="party-request-name">' +
+                escapePartyText(request.requester_name) +
+                '</span> → ' +
+                escapePartyText(request.artist || "") +
+                ' – ' +
+                escapePartyText(request.title || "");
+
+            const time = document.createElement("div");
+            time.className = "party-request-time";
+            time.id = "party-time-" + request.id;
+
+            const button = document.createElement("button");
+            button.className = "party-request-delete";
+            button.textContent = "✕";
+            button.onclick = function() {
+                deletePartyRequest(request.id);
+            };
+
+            row.appendChild(text);
+            row.appendChild(time);
+            row.appendChild(button);
+
+            box.appendChild(row);
+
+            updatePartyRequestTimer(request.id, remaining);
+        });
+
+    } catch (error) {
+        console.error("Fehler beim Laden der Party-Wünsche:", error);
+    }
+}
+
+
+function updatePartyRequestTimer(requestId, remaining) {
+
+    const time = document.getElementById("party-time-" + requestId);
+    const row = document.getElementById("party-request-" + requestId);
+
+    if (!time || !row) return;
+
+    if (remaining <= 0) {
+        row.remove();
+        return;
+    }
+
+    const minutes = Math.floor(remaining / 60);
+    const seconds = remaining % 60;
+
+    time.textContent =
+        minutes + ":" + String(seconds).padStart(2, "0");
+
+    setTimeout(function() {
+        updatePartyRequestTimer(requestId, remaining - 1);
+    }, 1000);
+}
+
+
+async function deletePartyRequest(requestId) {
+
+    if (!confirm("Diesen Musikwunsch wirklich löschen?")) {
+        return;
+    }
+
+    try {
+
+        const response =
+            await fetch("/party_delete_request?request_id=" +
+                        encodeURIComponent(requestId));
+
+        const data = await response.json();
+
+        if (!data.success) {
+            alert(data.error || "Der Wunsch konnte nicht gelöscht werden.");
+            loadPartyRequests();
+            return;
+        }
+
+        loadPartyRequests();
+
+    } catch (error) {
+
+        console.error(error);
+        alert("Der Wunsch konnte nicht gelöscht werden.");
+    }
+}
+
+
+function escapePartyText(text) {
+
+    return String(text || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+
+/*
+ * Beim Laden der Seite die aktuellen Wünsche anzeigen.
+ */
+loadPartyRequests();
+
+</script>
+
+
+<!-- ============================================================
+     Automatische Aktualisierung der Party-Wünsche
+     ============================================================ -->
+
+<script>
+setInterval(function() {
+    loadPartyRequests();
+}, 1000);
+</script>
+
+
+<script>
+async function deletePartyRequest(requestId) {
+
+    try {
+
+        const response =
+            await fetch("/party_delete_request?request_id=" +
+                        encodeURIComponent(requestId));
+
+        const data = await response.json();
+
+        if (!data.success) {
+            alert(data.error || "Der Wunsch konnte nicht gelöscht werden.");
+            loadPartyRequests();
+            return;
+        }
+
+        loadPartyRequests();
+
+    } catch (error) {
+
+        console.error(error);
+        alert("Der Wunsch konnte nicht gelöscht werden.");
+    }
+}
+</script>
+

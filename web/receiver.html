@@ -1,0 +1,1463 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HomeMusic Stream</title>
+
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f4f6f9;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        .receiver {
+            width: 90%;
+            max-width: 500px;
+            padding: 30px;
+            text-align: center;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+        }
+
+        h1 {
+            margin-top: 0;
+            color: #1f4e8c;
+        }
+
+        #status {
+            margin: 20px 0;
+            color: #555;
+        }
+
+        audio {
+            width: 100%;
+        }
+            #receiver-owner {
+            color: #1f4e8c;
+            font-size: 28px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 2px;
+        }
+
+        .receiver h1 {
+            text-align: center;
+        }
+        #songArtist { color:#1f4e8c; font-size:20px; font-weight:bold; text-align:center; margin-top:8px; }
+        #songTitle { color:#1f4e8c; font-size:18px; text-align:center; margin-top:2px; margin-bottom:12px; }
+    </style>
+</head>
+
+<body>
+
+<div class="receiver">
+
+    <h1>🎵 HomeMusic</h1>
+    <div id="receiver-owner">Günni's Partyplayer</div>
+    <div id="songArtist"></div>
+    <div id="songTitle"></div>
+
+    <div id="status">
+        Stream wird geladen...
+    </div>
+
+    
+<style>
+.receiver-party-request-list {
+    margin-top: 30px;
+    max-width: 750px;
+    text-align: left;
+}
+
+.receiver-party-request-list-title {
+    font-size: 22px;
+    font-weight: bold;
+    color: #24538f;
+    margin-bottom: 12px;
+}
+
+.receiver-party-request-list-box {
+    max-height: 420px;
+    overflow-y: auto;
+}
+
+.receiver-party-request-list-row {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    margin-bottom: 6px;
+    background: #f4f6f8;
+    border-radius: 6px;
+}
+
+.receiver-party-request-list-name {
+    width: 110px;
+    font-weight: bold;
+    color: #24538f;
+    flex-shrink: 0;
+}
+
+.receiver-party-request-list-song {
+    flex: 1;
+}
+
+.receiver-party-request-list-empty {
+    color: #777;
+}
+
+.receiver-party-request-list-row.receiver-party-playing {
+    background: #e7f0ff !important;
+    font-weight: 600;
+    border-left: 4px solid #24538f;
+}
+
+.receiver-party-request-list-row.receiver-party-playing
+.receiver-party-request-list-song::before {
+    content: "▶ ";
+    color: #24538f;
+    font-weight: bold;
+}
+</style>
+
+<div class="receiver-party-request-list" id="receiver-party-request-list">
+    <div class="receiver-party-request-list-title">🎵 Musikwünsche</div>
+
+    <div
+        class="receiver-party-request-list-box"
+        id="receiverPartyRequestList"
+    >
+        <div class="receiver-party-request-list-empty">
+            Noch keine Wünsche.
+        </div>
+    </div>
+</div>
+
+<audio id="streamPlayer" controls autoplay></audio>
+
+<div class="receiver-party-transport">
+    <button type="button" onclick="receiverPartyPrevious()">
+        ⏮ Zurück
+    </button>
+
+    <button type="button" onclick="receiverPartyNext()">
+        ⏭ Vor
+    </button>
+</div>
+
+
+</div>
+
+<script>
+    const player = document.getElementById("streamPlayer");
+    const status = document.getElementById("status");
+
+    let currentPath = null;
+    let waitingForNextSong = false;
+
+    // Web-Audio-Lautstärkestufe
+    let audioContext = null;
+    let gainNode = null;
+    let sourceNode = null;
+
+    function initAudioVolume() {
+
+        if (audioContext) {
+            return;
+        }
+
+        try {
+            audioContext = new (
+                window.AudioContext ||
+                window.webkitAudioContext
+            )();
+
+            sourceNode =
+                audioContext.createMediaElementSource(player);
+
+            gainNode =
+                audioContext.createGain();
+
+            sourceNode.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            // Vollständige Lautstärke als Startwert
+            gainNode.gain.value = 1.0;
+
+        } catch (error) {
+            console.error(
+                "Web Audio konnte nicht eingerichtet werden:",
+                error
+            );
+        }
+    }
+
+
+    async function checkCurrentSong() {
+
+        try {
+            const response = await fetch(
+                "/current?t=" + Date.now(),
+                { cache: "no-store" }
+            );
+
+            const data = await response.json();
+
+            const artist = document.getElementById("songArtist");
+            const title = document.getElementById("songTitle");
+
+            artist.textContent = data.artist || "";
+            title.textContent = data.title || "";
+
+            if (!data.success || !data.path) {
+                status.textContent = "⏸ Kein Titel ausgewählt";
+                return;
+            }
+
+            if (data.path === currentPath) {
+                return;
+            }
+
+            currentPath = data.path;
+
+            status.textContent = "⏳ Nächster Titel wird geladen...";
+
+            player.pause();
+            player.removeAttribute("src");
+            player.load();
+
+            player.src = "/stream?t=" + Date.now();
+            player.load();
+
+            try {
+                await player.play();
+                status.textContent = "▶ Musik wird wiedergegeben";
+            } catch (error) {
+                console.error(
+                    "Neuer Titel konnte nicht automatisch gestartet werden:",
+                    error
+                );
+
+                status.textContent =
+                    "▶ Neuer Titel bereit – Wiedergabe starten";
+            }
+
+        } catch (error) {
+
+            console.error(
+                "Aktueller Titel konnte nicht abgefragt werden:",
+                error
+            );
+
+            status.textContent =
+                "❌ Verbindung zum HomeMusic-Server";
+        }
+    }
+
+
+    async function waitForNextSong() {
+
+        if (waitingForNextSong) {
+            return;
+        }
+
+        waitingForNextSong = true;
+
+        while (waitingForNextSong) {
+
+            try {
+
+                const response = await fetch(
+                    "/current?t=" + Date.now(),
+                    { cache: "no-store" }
+                );
+
+                const data = await response.json();
+
+                if (
+                    data.success &&
+                    data.path &&
+                    data.path !== currentPath
+                ) {
+
+                    document.getElementById("songArtist").textContent =
+                        data.artist || "";
+
+                    document.getElementById("songTitle").textContent =
+                        data.title || "";
+
+                    currentPath = data.path;
+
+                    status.textContent =
+                        "⏳ Nächster Titel wird geladen...";
+
+                    player.pause();
+                    player.removeAttribute("src");
+                    player.load();
+
+                    player.src =
+                        "/stream?t=" + Date.now();
+
+                    player.load();
+
+                    try {
+                        await player.play();
+
+                        status.textContent =
+                            "▶ Musik wird wiedergegeben";
+
+                    } catch (error) {
+
+                        status.textContent =
+                            "▶ Neuer Titel bereit – Wiedergabe starten";
+                    }
+
+                    waitingForNextSong = false;
+                    return;
+                }
+
+            } catch (error) {
+                console.error(
+                    "Warten auf nächsten Titel:",
+                    error
+                );
+            }
+
+            await new Promise(resolve =>
+                setTimeout(resolve, 300)
+            );
+        }
+    }
+
+
+    async function checkReceiverQueue() {
+
+        try {
+
+            const response = await fetch(
+                "/receiver_queue?t=" + Date.now(),
+                { cache: "no-store" }
+            );
+
+            const data = await response.json();
+
+            if (!data.success || !data.song) {
+                return;
+            }
+
+            const song = data.song;
+
+            document.getElementById("songArtist").textContent =
+                song.artist || "";
+
+            document.getElementById("songTitle").textContent =
+                song.title || "";
+
+            if (song.filepath === currentPath) {
+                return;
+            }
+
+            currentPath = song.filepath;
+
+            status.textContent =
+                "⏳ Titel wird geladen...";
+
+            player.pause();
+            player.removeAttribute("src");
+            player.load();
+
+            player.src =
+                "/receiver_stream?path=" + encodeURIComponent(song.filepath) + "&t=" + Date.now();
+
+            player.load();
+
+            try {
+                await player.play();
+                status.textContent =
+                    "▶ Musik wird wiedergegeben";
+            } catch (error) {
+                status.textContent =
+                    "▶ Titel bereit – Wiedergabe starten";
+            }
+
+        } catch (error) {
+
+            console.error(
+                "Receiver-Warteschlange:",
+                error
+            );
+        }
+    }
+
+
+    async function checkReceiverVolume() {
+
+        try {
+            const response = await fetch(
+                "/volume?t=" + Date.now()
+            );
+
+            const data = await response.json();
+
+            if (!data.success) {
+                return;
+            }
+
+            const volume =
+                Number(data.volume);
+
+            if (
+                !Number.isFinite(volume) ||
+                volume < 0 ||
+                volume > 1
+            ) {
+                return;
+            }
+
+            // Web-Audio-Lautstärke setzen
+            if (gainNode) {
+                gainNode.gain.value = volume;
+            }
+
+        } catch (error) {
+
+            console.error(
+                "Empfänger-Lautstärke konnte nicht aktualisiert werden:",
+                error
+            );
+        }
+    }
+
+
+    // Beim ersten Abspielen die Audio-Kette aktivieren
+    player.addEventListener("play", async function () {
+
+        initAudioVolume();
+
+        if (
+            audioContext &&
+            audioContext.state === "suspended"
+        ) {
+            try {
+                await audioContext.resume();
+            } catch (error) {
+                console.error(
+                    "AudioContext konnte nicht aktiviert werden:",
+                    error
+                );
+            }
+        }
+
+        await checkReceiverVolume();
+    });
+
+
+    player.addEventListener("playing", function () {
+        status.textContent =
+            "▶ Musik wird wiedergegeben";
+
+        checkReceiverVolume();
+    });
+
+
+    player.addEventListener("waiting", function () {
+        status.textContent =
+            "⏳ Stream wird geladen...";
+    });
+
+
+    async function playNextReceiverSong() {
+
+        try {
+            const response = await fetch(
+                "/receiver_next?t=" + Date.now(),
+                { cache: "no-store" }
+            );
+
+            const data = await response.json();
+
+            if (!data.success || !data.song) {
+                status.textContent = "⏸ Playlist beendet";
+                return;
+            }
+
+            const song = data.song;
+
+            currentPath = song.filepath;
+
+            document.getElementById("songArtist").textContent =
+                song.artist || "";
+
+            document.getElementById("songTitle").textContent =
+                song.title || "";
+
+            player.src = "/receiver_stream?path=" + encodeURIComponent(song.filepath) + "&t=" + Date.now();
+            player.load();
+
+            await player.play();
+
+            status.textContent = "▶ Musik wird wiedergegeben";
+
+        } catch (error) {
+            console.error("Nächster Titel:", error);
+            status.textContent = "❌ Nächster Titel konnte nicht geladen werden";
+        }
+    }
+
+
+    player.addEventListener("ended", function () {
+        status.textContent =
+            "⏭ Nächster Titel...";
+
+        playNextReceiverSong();
+    });
+
+
+    player.addEventListener("error", function () {
+        status.textContent =
+            "❌ Stream konnte nicht geladen werden";
+    });
+
+
+    // Receiver-Warteschlange prüfen
+    checkReceiverQueue();
+    checkReceiverVolume();
+
+    // Neue Receiver-Playlist erkennen
+    setInterval(checkReceiverQueue, 1000);
+
+    // Lautstärke regelmäßig übernehmen
+    setInterval(checkReceiverVolume, 500);
+</script>
+
+<script src="/web/receiver_party_control.js?v=2"></script>
+
+
+<script>
+async function loadReceiverPartyRequestList() {
+
+    try {
+
+        const response = await fetch(
+            "/party_requests?t=" + Date.now(),
+            { cache: "no-store" }
+        );
+
+        const data = await response.json();
+
+        const box =
+            document.getElementById("receiverPartyRequestList");
+
+        if (!box) return;
+
+        if (
+            !data.success ||
+            !data.requests ||
+            data.requests.length === 0
+        ) {
+            box.innerHTML =
+                '<div class="receiver-party-request-list-empty">' +
+                'Noch keine Wünsche.' +
+                '</div>';
+
+            return;
+        }
+
+        /*
+         * Aktuellen Titel vom Receiver holen.
+         * Die request_id sorgt dafür, dass auch bei
+         * gleichen Titeln nur der richtige Wunsch
+         * markiert wird.
+         */
+        let currentRequestId = null;
+
+        try {
+
+            const queueResponse = await fetch(
+                "/receiver_queue?t=" + Date.now(),
+                { cache: "no-store" }
+            );
+
+            const queueData =
+                await queueResponse.json();
+
+            if (
+                queueData.success &&
+                queueData.song &&
+                queueData.song.request_id
+            ) {
+                currentRequestId =
+                    queueData.song.request_id;
+            }
+
+        } catch (error) {
+
+            console.error(
+                "Aktuellen Party-Titel:",
+                error
+            );
+        }
+
+        /*
+         * Nur neu aufbauen, wenn sich die
+         * Wunschliste tatsächlich geändert hat.
+         */
+        const newSignature = data.requests
+            .map(request => request.id)
+            .join(",");
+
+        if (box.dataset.signature !== newSignature) {
+
+            box.dataset.signature = newSignature;
+            box.innerHTML = "";
+
+            data.requests.forEach(request => {
+
+                const row =
+                    document.createElement("div");
+
+                row.className =
+                    "receiver-party-request-list-row";
+
+                row.dataset.requestId =
+                    String(request.id);
+
+                const name =
+                    document.createElement("div");
+
+                name.className =
+                    "receiver-party-request-list-name";
+
+                name.textContent =
+                    request.requester_name;
+
+                const song =
+                    document.createElement("div");
+
+                song.className =
+                    "receiver-party-request-list-song";
+
+                song.textContent =
+                    (request.artist || "") +
+                    " – " +
+                    (request.title || "");
+
+                row.appendChild(name);
+                row.appendChild(song);
+
+                box.appendChild(row);
+            });
+        }
+
+        /*
+         * Laufenden Titel markieren.
+         */
+        const rows =
+            box.querySelectorAll(
+                ".receiver-party-request-list-row"
+            );
+
+        rows.forEach(row => {
+
+            const isPlaying =
+                currentRequestId !== null &&
+                row.dataset.requestId ===
+                String(currentRequestId);
+
+            row.classList.toggle(
+                "receiver-party-playing",
+                isPlaying
+            );
+        });
+
+        /*
+         * Laufenden Titel wie im Partymodus
+         * ungefähr auf die 5. sichtbare Zeile setzen.
+         */
+        if (currentRequestId !== null) {
+
+            const playingRow =
+                box.querySelector(
+                    '.receiver-party-request-list-row[data-request-id="' +
+                    currentRequestId +
+                    '"]'
+                );
+
+            if (playingRow) {
+
+                /*
+                 * Nur automatisch scrollen, wenn sich der
+                 * laufende Titel seit dem letzten Durchlauf
+                 * geändert hat.
+                 *
+                 * Dadurch kann der Benutzer den Scrollbalken
+                 * frei bewegen, ohne dass er jede Sekunde
+                 * wieder nach oben springt.
+                 */
+                const shouldAutoScroll =
+                    box.dataset.lastAutoScrolledRequestId !==
+                    String(currentRequestId);
+
+                if (!shouldAutoScroll) {
+                    return;
+                }
+
+                box.dataset.lastAutoScrolledRequestId =
+                    String(currentRequestId);
+
+                const rowsArray =
+                    Array.from(rows);
+
+                const playingIndex =
+                    rowsArray.indexOf(playingRow);
+
+                if (playingIndex >= 0) {
+
+                    const visiblePosition = 4;
+
+                    const boxRect =
+                        box.getBoundingClientRect();
+
+                    const playingRect =
+                        playingRow.getBoundingClientRect();
+
+                    const rowHeight =
+                        playingRow.getBoundingClientRect().height;
+
+                    const targetTop =
+                        boxRect.top +
+                        (rowHeight * visiblePosition);
+
+                    const scrollChange =
+                        playingRect.top -
+                        targetTop;
+
+                    let newScroll =
+                        box.scrollTop +
+                        scrollChange;
+
+                    const maxScroll =
+                        Math.max(
+                            0,
+                            box.scrollHeight -
+                            box.clientHeight
+                        );
+
+                    newScroll =
+                        Math.max(
+                            0,
+                            Math.min(
+                                newScroll,
+                                maxScroll
+                            )
+                        );
+
+                    box.scrollTop = newScroll;
+                }
+            }
+        }
+
+    } catch (error) {
+
+        console.error(
+            "Fehler beim Laden der Musikwünsche:",
+            error
+        );
+    }
+}
+
+loadReceiverPartyRequestList();
+
+/*
+ * Die Receiver-Anzeige regelmäßig aktualisieren.
+ * Die Wiedergabe selbst wird dadurch NICHT gesteuert.
+ */
+setInterval(
+    loadReceiverPartyRequestList,
+    1000
+);
+</script>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+<!-- ============================================================
+     Receiver – Vor / Zurück
+     ============================================================ -->
+
+<style>
+.receiver-party-transport {
+    display: flex;
+    gap: 8px;
+    margin: 12px 0 14px 0;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.receiver-party-transport button {
+    border: 1px solid #bbb;
+    background: #f5f5f5;
+    border-radius: 6px;
+    padding: 7px 14px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.receiver-party-transport button:hover {
+    background: #e8e8e8;
+}
+
+.receiver-party-transport button:active {
+    transform: translateY(1px);
+}
+</style>
+
+
+
+<script>
+async function receiverPartyNext() {
+
+    try {
+
+        const response = await fetch(
+            "/party_next_request?direction=1&t=" + Date.now(),
+            { cache: "no-store" }
+        );
+
+        const data = await response.json();
+
+        if (!data.success) {
+            console.log("Kein nächster Titel:", data);
+            return;
+        }
+
+        /*
+         * Der Receiver überwacht die Queue bereits selbst.
+         * Durch die Serverfunktion wird die neue Position
+         * gesetzt und die Wiedergabe gestartet.
+         */
+        console.log(
+            "Vor:",
+            data.song
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Fehler bei Vor:",
+            error
+        );
+    }
+}
+
+
+async function receiverPartyPrevious() {
+
+    try {
+
+        const response = await fetch(
+            "/party_next_request?direction=-1&t=" + Date.now(),
+            { cache: "no-store" }
+        );
+
+        const data = await response.json();
+
+        if (!data.success) {
+            console.log("Kein vorheriger Titel:", data);
+            return;
+        }
+
+        console.log(
+            "Zurück:",
+            data.song
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Fehler bei Zurück:",
+            error
+        );
+    }
+}
+</script>
+
+
+<style>
+/* Artist und Titel unter "Günni's Partyplayer" ausblenden.
+   Der laufende Titel wird bereits in der Musikwunschliste angezeigt. */
+#songArtist,
+#songTitle {
+    display: none !important;
+}
+</style>
+
+
+<style>
+#streamPlayer {
+    width: 72% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    display: block !important;
+}
+</style>
+
+
+<style>
+/* Eigenes Player-Layout: Lautstärke außerhalb des schwarzen Balkens */
+#streamPlayer {
+    display: none !important;
+}
+
+.hm-custom-player {
+    width: 72%;
+    margin: 0 auto;
+}
+
+.hm-black-player {
+    background: #444;
+    color: white;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 10px;
+    box-sizing: border-box;
+    border-radius: 2px;
+}
+
+.hm-play-btn {
+    border: 0;
+    background: transparent;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 0;
+    flex: 0 0 auto;
+}
+
+.hm-progress {
+    flex: 1;
+    min-width: 0;
+    cursor: pointer;
+}
+
+.hm-time {
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.hm-volume-row {
+    width: 72%;
+    margin: 8px auto 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-sizing: border-box;
+}
+
+.hm-volume-icon {
+    font-size: 18px;
+}
+
+.hm-volume {
+    flex: 1;
+    cursor: pointer;
+}
+
+@media (max-width: 600px) {
+    .hm-custom-player,
+    .hm-volume-row {
+        width: 72%;
+    }
+}
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const audio = document.getElementById("streamPlayer");
+    if (!audio) return;
+
+    audio.controls = false;
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "hm-custom-player";
+
+    wrapper.innerHTML = `
+        <div class="hm-black-player">
+            <button class="hm-play-btn" type="button">▶</button>
+            <input class="hm-progress" type="range" min="0" max="1000" value="0">
+            <span class="hm-time">0:00 / 0:00</span>
+        </div>
+
+        <div class="hm-volume-row">
+            <span class="hm-volume-icon">🔊</span>
+            <input class="hm-volume" type="range" min="0" max="1" step="0.01" value="1">
+        </div>
+    `;
+
+    audio.parentNode.insertBefore(wrapper, audio);
+    audio.style.display = "none";
+
+    const playBtn = wrapper.querySelector(".hm-play-btn");
+    const progress = wrapper.querySelector(".hm-progress");
+    const timeLabel = wrapper.querySelector(".hm-time");
+    const volume = wrapper.querySelector(".hm-volume");
+
+    function formatTime(seconds) {
+        if (!Number.isFinite(seconds)) return "0:00";
+        seconds = Math.floor(seconds);
+        const min = Math.floor(seconds / 60);
+        const sec = String(seconds % 60).padStart(2, "0");
+        return min + ":" + sec;
+    }
+
+    function updatePlayer() {
+        const duration = audio.duration || 0;
+        const current = audio.currentTime || 0;
+
+        if (duration > 0) {
+            progress.value = Math.round((current / duration) * 1000);
+        } else {
+            progress.value = 0;
+        }
+
+        timeLabel.textContent =
+            formatTime(current) + " / " + formatTime(duration);
+
+        playBtn.textContent = audio.paused ? "▶" : "❚❚";
+    }
+
+    playBtn.addEventListener("click", function () {
+        if (audio.paused) {
+            audio.play().catch(() => {});
+        } else {
+            audio.pause();
+        }
+    });
+
+    progress.addEventListener("input", function () {
+        if (audio.duration) {
+            audio.currentTime =
+                (Number(progress.value) / 1000) * audio.duration;
+        }
+    });
+
+    volume.value = audio.volume;
+
+    volume.addEventListener("input", function () {
+        audio.volume = Number(volume.value);
+
+        if (Number(volume.value) === 0) {
+            wrapper.querySelector(".hm-volume-icon").textContent = "🔇";
+        } else {
+            wrapper.querySelector(".hm-volume-icon").textContent = "🔊";
+        }
+    });
+
+    audio.addEventListener("timeupdate", updatePlayer);
+    audio.addEventListener("loadedmetadata", updatePlayer);
+    audio.addEventListener("durationchange", updatePlayer);
+    audio.addEventListener("play", updatePlayer);
+    audio.addEventListener("pause", updatePlayer);
+    audio.addEventListener("ended", updatePlayer);
+
+    updatePlayer();
+});
+</script>
+
+
+<script>
+/* iPhone/iPad: eigene Lautstärkeregelung über Web Audio */
+document.addEventListener("DOMContentLoaded", function () {
+    const audio = document.getElementById("streamPlayer");
+    const volume = document.querySelector(".hm-volume");
+    const volumeIcon = document.querySelector(".hm-volume-icon");
+
+    if (!audio || !volume) return;
+
+    let audioContext = null;
+    let gainNode = null;
+    let sourceNode = null;
+
+    function setupIOSVolume() {
+        if (audioContext) {
+            if (audioContext.state === "suspended") {
+                audioContext.resume().catch(() => {});
+            }
+            return;
+        }
+
+        try {
+            audioContext = new (window.AudioContext ||
+                                window.webkitAudioContext)();
+
+            sourceNode = audioContext.createMediaElementSource(audio);
+            gainNode = audioContext.createGain();
+
+            gainNode.gain.value = Number(volume.value);
+
+            sourceNode.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            if (audioContext.state === "suspended") {
+                audioContext.resume().catch(() => {});
+            }
+        } catch (e) {
+            console.log("Web-Audio-Lautstärke nicht verfügbar:", e);
+        }
+    }
+
+    volume.addEventListener("input", function () {
+        setupIOSVolume();
+
+        const value = Number(volume.value);
+
+        if (gainNode) {
+            gainNode.gain.value = value;
+        }
+
+        if (volumeIcon) {
+            if (value <= 0) {
+                volumeIcon.textContent = "🔇";
+            } else if (value < 0.5) {
+                volumeIcon.textContent = "🔉";
+            } else {
+                volumeIcon.textContent = "🔊";
+            }
+        }
+    }, { passive: true });
+
+    volume.addEventListener("touchstart", function () {
+        setupIOSVolume();
+    }, { passive: true });
+});
+</script>
+
+
+<script>
+/* ============================================================
+   FINALER IPHONE-LAUTSTÄRKE-REGLER
+   ============================================================ */
+(function () {
+    function initIOSVolume() {
+        const audio = document.getElementById("streamPlayer");
+        const oldVolume = document.querySelector(".hm-volume");
+
+        if (!audio || !oldVolume || oldVolume.dataset.iosFixed === "1") {
+            return;
+        }
+
+        /* Alten Regler durch einen frischen Regler ersetzen,
+           damit alte Event-Handler nicht mehr dazwischenfunken. */
+        const volume = oldVolume.cloneNode(true);
+        volume.dataset.iosFixed = "1";
+        oldVolume.replaceWith(volume);
+
+        const icon = document.querySelector(".hm-volume-icon");
+
+        let ctx = null;
+        let source = null;
+        let gain = null;
+
+        function createAudioGraph() {
+            if (ctx) {
+                if (ctx.state === "suspended") {
+                    ctx.resume().catch(() => {});
+                }
+                return;
+            }
+
+            try {
+                ctx = new (window.AudioContext ||
+                           window.webkitAudioContext)();
+
+                source = ctx.createMediaElementSource(audio);
+                gain = ctx.createGain();
+
+                gain.gain.value = Number(volume.value);
+
+                source.connect(gain);
+                gain.connect(ctx.destination);
+
+                ctx.resume().catch(() => {});
+            } catch (e) {
+                console.log("Audio-Gain konnte nicht erstellt werden:", e);
+            }
+        }
+
+        function setVolume(value) {
+            value = Math.max(0, Math.min(1, Number(value)));
+
+            /* iOS darf das Audio-Element selbst auf voller Lautstärke
+               lassen. Die eigentliche Regelung macht der GainNode. */
+            audio.volume = 1;
+
+            createAudioGraph();
+
+            if (gain) {
+                if (value <= 0) {
+                    gain.gain.value = 0;
+                } else {
+                    gain.gain.value = value;
+                }
+            }
+
+            if (icon) {
+                if (value <= 0) {
+                    icon.textContent = "🔇";
+                } else if (value < 0.5) {
+                    icon.textContent = "🔉";
+                } else {
+                    icon.textContent = "🔊";
+                }
+            }
+
+            localStorage.setItem("homemusic_receiver_volume", value);
+        }
+
+        /* AudioContext durch echte Benutzeraktion freischalten */
+        function unlockAudio() {
+            createAudioGraph();
+
+            if (ctx && ctx.state === "suspended") {
+                ctx.resume().catch(() => {});
+            }
+        }
+
+        document.addEventListener("touchstart", unlockAudio, {
+            passive: true,
+            once: false
+        });
+
+        document.addEventListener("pointerdown", unlockAudio, {
+            passive: true,
+            once: false
+        });
+
+        volume.addEventListener("touchstart", unlockAudio, {
+            passive: true
+        });
+
+        volume.addEventListener("pointerdown", unlockAudio, {
+            passive: true
+        });
+
+        volume.addEventListener("input", function () {
+            setVolume(this.value);
+        });
+
+        volume.addEventListener("change", function () {
+            setVolume(this.value);
+        });
+
+        const saved = localStorage.getItem(
+            "homemusic_receiver_volume"
+        );
+
+        if (saved !== null) {
+            volume.value = saved;
+        }
+
+        /* Wichtig: Audio-Element nicht über volume regeln */
+        audio.volume = 1;
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initIOSVolume);
+    } else {
+        initIOSVolume();
+    }
+})();
+</script>
+
+
+<script>
+/* ============================================================
+   LAUTSTÄRKE TRENNUNG:
+   PC = normale HTML5-Lautstärke
+   iPhone/iPad = WebAudio-Gain
+   ============================================================ */
+(function () {
+
+    function fixReceiverVolume() {
+
+        const audio = document.getElementById("streamPlayer");
+        const oldSlider = document.querySelector(".hm-volume");
+
+        if (!audio || !oldSlider) return;
+
+        /* alten Regler ersetzen -> alte Event-Handler verschwinden */
+        const slider = oldSlider.cloneNode(true);
+        oldSlider.replaceWith(slider);
+
+        const icon = document.querySelector(".hm-volume-icon");
+
+        const isIOS =
+            /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+            (navigator.platform === "MacIntel" &&
+             navigator.maxTouchPoints > 1);
+
+        let audioContext = null;
+        let sourceNode = null;
+        let gainNode = null;
+
+        function updateIcon(value) {
+            if (!icon) return;
+
+            if (value <= 0) {
+                icon.textContent = "🔇";
+            } else if (value < 0.5) {
+                icon.textContent = "🔉";
+            } else {
+                icon.textContent = "🔊";
+            }
+        }
+
+        /* ----------------------------------------------------
+           iPHONE
+           ---------------------------------------------------- */
+        function setupIOS() {
+
+            if (audioContext) {
+                if (audioContext.state === "suspended") {
+                    audioContext.resume().catch(() => {});
+                }
+                return;
+            }
+
+            try {
+                audioContext = new (window.AudioContext ||
+                                    window.webkitAudioContext)();
+
+                sourceNode =
+                    audioContext.createMediaElementSource(audio);
+
+                gainNode = audioContext.createGain();
+
+                sourceNode.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                audio.volume = 1;
+
+                gainNode.gain.value =
+                    Number(slider.value);
+
+                audioContext.resume().catch(() => {});
+
+            } catch (e) {
+                console.log("iPhone Audio-Gain Fehler:", e);
+            }
+        }
+
+        function setIOSVolume(value) {
+
+            setupIOS();
+
+            if (gainNode) {
+                gainNode.gain.value = value;
+            }
+
+            audio.volume = 1;
+            updateIcon(value);
+
+            localStorage.setItem(
+                "homemusic_receiver_volume",
+                value
+            );
+        }
+
+        /* ----------------------------------------------------
+           PC
+           ---------------------------------------------------- */
+        function setPCVolume(value) {
+
+            /* Gain-Regelung nicht benutzen */
+            audio.volume = value;
+
+            updateIcon(value);
+
+            localStorage.setItem(
+                "homemusic_receiver_volume",
+                value
+            );
+        }
+
+        /* gespeicherte Lautstärke */
+        let saved = localStorage.getItem(
+            "homemusic_receiver_volume"
+        );
+
+        if (saved === null) {
+            saved = "1";
+        }
+
+        saved = Math.max(0, Math.min(1, Number(saved)));
+        slider.value = saved;
+
+        if (!isIOS) {
+            /* PC direkt setzen */
+            audio.volume = saved;
+            updateIcon(saved);
+        } else {
+            /* iPhone Gain vorbereiten */
+            setupIOS();
+            setIOSVolume(saved);
+        }
+
+        slider.addEventListener("input", function () {
+
+            const value = Math.max(
+                0,
+                Math.min(1, Number(this.value))
+            );
+
+            if (isIOS) {
+                setIOSVolume(value);
+            } else {
+                setPCVolume(value);
+            }
+
+        });
+
+        /* iPhone AudioContext durch Fingerbedienung freigeben */
+        if (isIOS) {
+
+            slider.addEventListener("touchstart", function () {
+                setupIOS();
+            }, { passive: true });
+
+            slider.addEventListener("pointerdown", function () {
+                setupIOS();
+            }, { passive: true });
+        }
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener(
+            "DOMContentLoaded",
+            fixReceiverVolume
+        );
+    } else {
+        fixReceiverVolume();
+    }
+
+})();
+</script>
+
